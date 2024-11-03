@@ -1,6 +1,40 @@
 import streamlit as st
 import pickle
 import requests
+import os
+
+
+#since the github size limit is 100mb and similar.pkl size is more than 150mb it was a nuisance
+#so added externally downloadble similar.pkl file when streamlit will first deploy it will download all 
+#similar.pkl file
+
+def download_pkl_from_dropbox(url,filename):
+    response = requests.get(url, stream=True)
+    with open(filename,"wb") as file:
+        for chunk in response.iter_content(chunk_size=8192):
+            file.write(chunk)
+
+
+dropbox_url =   'https://www.dropbox.com/scl/fi/hx4l86hqblw337vgl7zag/similar.pkl?rlkey=cft9cw5sihuybabvz5rmb050p&st=ji0rusob&dl=1'
+filename = 'similar.pkl'
+
+          
+#checking if file already exists locally to avoid repeated downloads    
+if not os.path.exists(filename):
+    st.write("Downloading Recommendatoin data...")
+    download_pkl_from_dropbox(dropbox_url, filename)
+
+
+#loading the downloaded file 
+with open(filename, 'rb') as file:
+    recommend = pickle.load(file)
+    
+    
+#load the movies.pkl file
+mv = pickle.load(open('movies.pkl','rb'))
+mv_title= mv['title'].values
+
+
 
 def fetch_poster(movie_id):
     response = requests.get('https://api.themoviedb.org/3/movie/{}?api_key=89f970116f55c100c6adc1f21157ad34'.format(movie_id))
@@ -9,26 +43,11 @@ def fetch_poster(movie_id):
     
     
     
-    
-    
-    
+
+# recommend = pickle.load(open('similar.pkl','rb'))
 
 
 
-
-recommend = pickle.load(open('similar.pkl','rb'))
-
-
-
-
-
-
-
-
-mv = pickle.load(open('movies.pkl','rb'))
-mv_title= mv['title'].values
-
-st.title('MOVIE RECOMMENDATION SYSTEM')
 
 def recommends(movie):
     movie_index = mv[mv['title'] == movie].index[0] #takes the index of current movie
@@ -45,6 +64,7 @@ def recommends(movie):
     return recommendations,recommend_movies_poster
     
 
+st.title('MOVIE RECOMMENDATION SYSTEM')
 
 
 option = st.selectbox(
